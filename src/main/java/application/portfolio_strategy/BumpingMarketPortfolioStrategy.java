@@ -1,9 +1,8 @@
 package application.portfolio_strategy;
 
-import application.exchange.Exchange;
+import application.candle.Candle;
 import application.model.Market;
 import application.model.MarketRepository;
-import application.model.Portfolio;
 import application.secrets.SecretsDictionary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -12,21 +11,23 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 
 @Service
 @Qualifier("bumping-market-strategy")
 public class BumpingMarketPortfolioStrategy implements PortfolioStrategy {
 
+    public static final BigDecimal MAX_ALLOWED_CANDLE_TAIL = BigDecimal.valueOf(0.1);
     private final MarketRepository marketRepository;
+    private final Candle candle;
 
     @Resource(name = "secrets")
     private Map<String, String> secrets;
 
     @Autowired
-    public BumpingMarketPortfolioStrategy(MarketRepository marketRepository) {
+    public BumpingMarketPortfolioStrategy(MarketRepository marketRepository, Candle candle) {
         this.marketRepository = marketRepository;
+        this.candle = candle;
     }
 
     @Override
@@ -36,13 +37,20 @@ public class BumpingMarketPortfolioStrategy implements PortfolioStrategy {
 
     @Override
     public BigDecimal marketFitness(Market market) {
-        final Market snapshot = fetchMarketHalfHourOldSnapshot(market);
-        final BigDecimal difference = snapshot.getLast().subtract(market.getLast());
-        final boolean isRisingMarket = difference.signum() > 0;
-        if (isRisingMarket) {
-            //TODO CHECK PERCENGE OF GROWTH
+        final Market halfHourOldSnapshot = fetchMarketHalfHourOldSnapshot(market);
+        final boolean isGreenCandle = candle.isGreen(market, halfHourOldSnapshot);
+        final boolean hasShortTail = hasShortTail(market, halfHourOldSnapshot, MAX_ALLOWED_CANDLE_TAIL);
+        if (isGreenCandle && hasShortTail) {
+            //close the deal
         }
         return BigDecimal.ZERO;
+    }
+
+    private boolean hasShortTail(Market actualMarket, Market oldMarket, BigDecimal maxAllowedTailPercentage) {
+        final BigDecimal tail = candle.tailRawValue(actualMarket);
+        final BigDecimal marketVariation = candle.getVariation(actualMarket, oldMarket);
+        final BigDecimal tailPercent = marketVariation.multiply(maxAllowedTailPercentage);
+        return tail.compareTo(tailPercent) < 0;
     }
 
     private Market fetchMarketHalfHourOldSnapshot(Market market) {
