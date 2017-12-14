@@ -37,11 +37,10 @@ public class Trader {
      * Runs every 5 minutes
      */
     @Scheduled(fixedRate = 300000)
-    public void trade() {
-        log.info("Entering trading protocol");
-        //TODO check balance and decide when to invest
+    public void scan() {
+        log.info("Scan protocol started");
         final Portfolio recommendedPortfolio = getPortfolioStrategy().getRecommendedPortfolio(getExchange());
-        log.info("Exiting trading protocol, reentering in 5 minutes");
+        log.info("Exiting scan protocol, restarting in 5 minutes");
     }
 
     private Exchange getExchange() {

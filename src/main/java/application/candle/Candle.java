@@ -8,17 +8,23 @@ import java.math.BigDecimal;
 @Service
 public class Candle {
 
-    public boolean isGreen(Market actualMarket, Market oldMarket) {
-        final BigDecimal variation = getVariation(actualMarket, oldMarket);
+    public boolean isGreen(final Market actualMarket, final Market oldMarket) {
+        final BigDecimal variation = getVariationBetweenMarkets(actualMarket, oldMarket);
         return variation.signum() > 0;
     }
 
-    public BigDecimal getVariation(Market actualMarket, Market halfHourOldSnapshot) {
+    public BigDecimal getVariationBetweenMarkets(final Market actualMarket, final Market halfHourOldSnapshot) {
         return halfHourOldSnapshot.getLast().subtract(actualMarket.getLast());
     }
 
-    public BigDecimal tailRawValue(Market market) {
+    public BigDecimal getTopTailRawValue(final Market market) {
         return market.getHigh().subtract(market.getLast());
+    }
+
+    public BigDecimal getTopTailPercentValue(final Market actualMarket, final Market oldMarket) {
+        final BigDecimal topTailRawValue = getTopTailRawValue(actualMarket);
+        final BigDecimal variation = getVariationBetweenMarkets(actualMarket, oldMarket);
+        return topTailRawValue.divide(variation);
     }
 
 }

@@ -17,7 +17,6 @@ import java.util.Map;
 @Qualifier("bumping-market-strategy")
 public class BumpingMarketPortfolioStrategy implements PortfolioStrategy {
 
-    public static final BigDecimal MAX_ALLOWED_CANDLE_TAIL = BigDecimal.valueOf(0.1);
     private final MarketRepository marketRepository;
     private final Candle candle;
 
@@ -39,18 +38,12 @@ public class BumpingMarketPortfolioStrategy implements PortfolioStrategy {
     public BigDecimal marketFitness(Market market) {
         final Market halfHourOldSnapshot = fetchMarketHalfHourOldSnapshot(market);
         final boolean isGreenCandle = candle.isGreen(market, halfHourOldSnapshot);
-        final boolean hasShortTail = hasShortTail(market, halfHourOldSnapshot, MAX_ALLOWED_CANDLE_TAIL);
-        if (isGreenCandle && hasShortTail) {
-            //close the deal
+        if (isGreenCandle) {
+            final BigDecimal tailPercent = candle.getTopTailPercentValue(market, halfHourOldSnapshot);
+            final BigDecimal variation = candle.getVariationBetweenMarkets(market, halfHourOldSnapshot);
+            return tailPercent.subtract(variation);
         }
-        return BigDecimal.ZERO;
-    }
-
-    private boolean hasShortTail(Market actualMarket, Market oldMarket, BigDecimal maxAllowedTailPercentage) {
-        final BigDecimal tail = candle.tailRawValue(actualMarket);
-        final BigDecimal marketVariation = candle.getVariation(actualMarket, oldMarket);
-        final BigDecimal tailPercent = marketVariation.multiply(maxAllowedTailPercentage);
-        return tail.compareTo(tailPercent) < 0;
+        return BigDecimal.valueOf(Long.MAX_VALUE);
     }
 
     private Market fetchMarketHalfHourOldSnapshot(Market market) {
