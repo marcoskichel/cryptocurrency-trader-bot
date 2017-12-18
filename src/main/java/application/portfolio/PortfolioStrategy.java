@@ -1,8 +1,7 @@
-package application.portfolio_strategy;
+package application.portfolio;
 
 import application.exchange.Exchange;
-import application.model.Market;
-import application.model.Portfolio;
+import application.market.Market;
 
 import java.math.BigDecimal;
 import java.util.Comparator;

@@ -1,6 +1,6 @@
 package application.candle;
 
-import application.model.Market;
+import application.market.Market;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;

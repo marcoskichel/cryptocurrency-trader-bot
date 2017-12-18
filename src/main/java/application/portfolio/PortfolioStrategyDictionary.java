@@ -1,4 +1,4 @@
-package application.portfolio_strategy;
+package application.portfolio;
 
 public  class PortfolioStrategyDictionary {
 

@@ -1,4 +1,6 @@
-package application.model;
+package application.portfolio;
+
+import application.market.Market;
 
 import java.util.List;
 

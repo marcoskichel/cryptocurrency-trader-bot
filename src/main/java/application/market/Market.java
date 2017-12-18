@@ -1,4 +1,4 @@
-package application.model;
+package application.market;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
