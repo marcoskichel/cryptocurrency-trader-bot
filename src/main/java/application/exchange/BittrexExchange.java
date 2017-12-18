@@ -1,23 +1,24 @@
 package application.exchange;
 
 import application.market.Market;
-import application.treasurer.Treasurer;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import application.order.Order;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
 @Qualifier("bittrex-exchange")
 public class BittrexExchange implements Exchange {
 
-    private final BeanFactory beanFactory;
+    private static final Logger log = LoggerFactory.getLogger(BittrexExchange.class);
 
-    @Autowired
-    public BittrexExchange(BeanFactory beanFactory) {
-        this.beanFactory = beanFactory;
+    @Override
+    public String getName() {
+        return "Bittrex";
     }
 
     @Override
@@ -26,8 +27,30 @@ public class BittrexExchange implements Exchange {
     }
 
     @Override
-    public Treasurer getTreasurer() {
-        return beanFactory.getBean("bittrex-exchange", Treasurer.class);
+    public BigDecimal getBalance(String currency) {
+        return null;
+    }
+
+    @Override
+    public Order buyAtAsk(Order order) {
+        log.info("Trying to buy " + order.getMarket() + " at " + getName() + " for X");
+        try {
+            Thread.sleep(15000);
+            return order;
+        } catch (InterruptedException ex) {
+            log.error("Cannot wait to confirm the order, confirming right now");
+            return order;
+        }
+    }
+
+    @Override
+    public Order sellAtBid(Order order) {
+        return null;
+    }
+
+    @Override
+    public Order cancel(Order order) {
+        return null;
     }
 
 }

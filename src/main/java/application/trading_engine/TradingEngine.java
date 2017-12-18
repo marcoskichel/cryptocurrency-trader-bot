@@ -2,12 +2,10 @@ package application.trading_engine;
 
 import application.exchange.Exchange;
 import application.market.Market;
+import application.order.Order;
+import application.order.OrderRepository;
 import application.portfolio.Portfolio;
-import application.trade.Trade;
-import application.trade.TradeRepository;
 import application.portfolio.PortfolioStrategy;
-import application.trading_operator.TradingOperator;
-import application.treasurer.Treasurer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
@@ -33,12 +31,12 @@ public class TradingEngine {
     @Resource
     private Map<String, String> secrets;
 
-    private final TradeRepository tradeRepository;
+    private final OrderRepository orderRepository;
 
     @Autowired
-    public TradingEngine(BeanFactory beanFactory, TradeRepository tradeRepository) {
+    public TradingEngine(BeanFactory beanFactory, OrderRepository orderRepository) {
         this.beanFactory = beanFactory;
-        this.tradeRepository = tradeRepository;
+        this.orderRepository = orderRepository;
     }
 
     /**
@@ -55,26 +53,20 @@ public class TradingEngine {
     }
 
     private void buyPortfolio(Portfolio recommendedPortfolio) {
-        final BigDecimal tradeValue = calculateTradeValue(recommendedPortfolio);
-        recommendedPortfolio.getMarkets().forEach(market -> buy(market, tradeValue));
+        final BigDecimal amount = inferAmount(recommendedPortfolio);
+        recommendedPortfolio.getMarkets().forEach(market -> buy(market, amount));
     }
 
-    private void buy(Market market, BigDecimal tradeValue) {
-        Trade trade = new Trade();
-        trade.setBoughtValue(tradeValue);
-        trade.setMarketName(market.getName());
-        log.info("Buying " + market.getName() + " at " + getExchange().getName() + " for " + market.getAsk() + "BTC");
-        trade = getTradingOperator().buyAtAsk(trade);
-        try {
-            Thread.sleep(15000);
-        } catch (InterruptedException ex) {
-            log.error("Cannot wait to confirm the order, confirming right now");
-        }
-        tradeRepository.save(trade);
+    private void buy(Market market, BigDecimal amount) {
+        Order order = new Order();
+        order.setAmount(amount);
+        order.setMarket(market.getName());
+        order = getExchange().buyAtAsk(order);
+        orderRepository.save(order);
     }
 
-    private BigDecimal calculateTradeValue(Portfolio recommendedPortfolio) {
-        final BigDecimal bitcoinBalance = getTreasurer().getBitcoinBalance();
+    private BigDecimal inferAmount(Portfolio recommendedPortfolio) {
+        final BigDecimal bitcoinBalance = getExchange().getBalance("btc");
         final BigDecimal maxTradeValue = BigDecimal.valueOf(Double.valueOf(secrets.get(MAX_TRADE_VALUE)));
         final BigDecimal tradesSumValue = maxTradeValue.multiply(BigDecimal.valueOf(recommendedPortfolio.getMarkets().size()));
         if (tradesSumValue.compareTo(bitcoinBalance) > 0) {
@@ -89,14 +81,6 @@ public class TradingEngine {
 
     private PortfolioStrategy getPortfolioStrategy() {
         return beanFactory.getBean(secrets.get(PORTFOLIO_STRATEGY_NAME), PortfolioStrategy.class);
-    }
-
-    private Treasurer getTreasurer() {
-        return getExchange().getTreasurer();
-    }
-
-    private TradingOperator getTradingOperator() {
-        return getExchange().getTradingOperator();
     }
 
 }
