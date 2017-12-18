@@ -1,8 +1,9 @@
 package application.portfolio;
 
 import application.market.Market;
-import application.trade.TradeRepository;
 import application.secrets.SecretsDictionary;
+import application.trade.TradeRepository;
+import application.trade.TradeStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Resource;
@@ -24,7 +25,7 @@ public class OversoldRSIPortfolioStrategy implements PortfolioStrategy {
     @Override
     public int portfolioSize() {
         final Integer portfolioMaxSize = Integer.valueOf(secrets.get(SecretsDictionary.PORTFOLIO_SIZE));
-        final Integer activeTrades = tradeRepository.countActiveTrades().intValue();
+        final Integer activeTrades = tradeRepository.countByStatus(TradeStatus.ACTIVE).intValue();
         return portfolioMaxSize - activeTrades;
     }
 
